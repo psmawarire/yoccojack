@@ -1,43 +1,54 @@
-
 package yoccojack;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
-import java.net.URL;
-import java.nio.charset.Charset;
+import java.io.*;
+import java.util.*;
+import java.net.*;
+import com.google.gson.Gson;
 
-import org.json.JSONException;
-import org.json.JSONObject;
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import javax.json.JsonValue;
 
 public class Yoccojack {
- private static String readAll(Reader rd) throws IOException {
-    StringBuilder sb = new StringBuilder();
-    int cp;
-    while ((cp = rd.read()) != -1) {
-      sb.append((char) cp);
+       private static String readUrl(String urlString) throws Exception {
+        BufferedReader reader = null;
+        try{
+            URL url = new URL(urlString);
+            reader = new BufferedReader(new InputStreamReader(url.openStream()));
+            StringBuffer buffer = new StringBuffer();
+            int read;
+            char[] chars = new char[1024];
+            while ((read = reader.read(chars)) != -1)
+                buffer.append(chars, 0, read);
+            return buffer.toString();
+        } finally {
+            if (reader != null)
+                reader.close();
+        }
     }
-    return sb.toString();
-  }
-
-  public static JSONObject readJsonFromUrl(String url) throws IOException, JSONException {
-    InputStream is = new URL(url).openStream();
-    try {
-      BufferedReader rd = new BufferedReader(new InputStreamReader(is, Charset.forName("UTF-8")));
-      String jsonText = readAll(rd);
-      JSONObject json = new JSONObject(jsonText);
-      return json;
-    } finally {
-      is.close();
-    }
-  }
-
-  public static void main(String[] args) throws IOException, JSONException {
-    JSONObject json = readJsonFromUrl("https://s3-eu-west-1.amazonaws.com/yoco-testing/tests.json");
-    System.out.println(json.toString());
-    System.out.println(json.get("playerA"));
     
+    
+    static class draws{
+        String playerA;
+        String playerB;
+    }
+    
+    static class plays {
+        String playerA;
+        String playerB;
+        List<draws> items;
+    }
+    
+  public static void main(String[] args) throws Exception {
+      String json = readUrl("https://s3-eu-west-1.amazonaws.com/" + 
+              "yoco-testing/tests.json");
+      Gson gson = new Gson();
+      plays page =  gson.fromJson(json, plays.class);
+      
+      System.out.println(page.playerA);
+      for (draws item : page.items)
+          System.out.println(" " + item.playerA);
   }
 }
